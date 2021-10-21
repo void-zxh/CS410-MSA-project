@@ -131,9 +131,95 @@ private:
         }
     }
 
+    void build_space_exc_chrom(int space_num)
+    {
+        int y;
+        int ix,iy;
+        GA_node2 xi;
+        len_gap=max(len_x,len_input)-min(len_x,len_input);
+        chrom.clear();
+        for(int i=1;i<=CHROM_NUM;i++)
+        {
+            if(len_input<len_x)
+            {
+                xi.lenx=len_gap+LIM_SPACE_MIN+space_num;
+                xi.leny=LIM_SPACE_MIN+space_num;
+                xi.final_len=len_x+LIM_SPACE_MIN+space_num;
+            }
+            else
+            {
+                xi.lenx=LIM_SPACE_MIN+space_num;
+                xi.leny=len_gap+LIM_SPACE_MIN+space_num;
+                xi.final_len=len_input+LIM_SPACE_MIN+space_num;
+            }
+
+            if(xi.final_len>len_x+len_input-1)
+            {
+                cout<<"OVERFLOW:";
+                cout<<len_x+len_input-1<<endl;
+                cout<<xi.final_len<<endl;
+                continue;
+            }
+
+            for(int k=0;k<=xi.final_len+1;k++)
+                xi.vis[k]=0;
+
+            for(int k=1;k<=xi.lenx;k++)
+            {
+                do
+                {
+                    y=1+rand()%xi.final_len;
+                }while(xi.vis[y]==1);
+                xi.vis[y]=1;
+                xi.query[k]=y;
+            }
+ 
+            for(int k=1;k<=xi.leny;k++)
+            {
+                do
+                {
+                    y=1+rand()%xi.final_len;
+                }while(xi.vis[y]==1||xi.vis[y]==2);
+                xi.vis[y]=2;
+                xi.comp[k]=y;
+            }
+
+            xi.fitness=0; ix=1; iy=1;
+            for(int k=1;k<=xi.final_len;k++)
+                if(xi.vis[k]==1)
+                {
+                    xi.fitness+=GAP;
+                    iy++;
+                }
+                else if(xi.vis[k]==2)
+                {
+                    xi.fitness+=GAP;
+                    ix++;
+                }
+                else 
+                {
+                    if(query_input[ix]!=query_comp[iy])
+                        xi.fitness+=MISMATCH;
+                    ix++; iy++;
+                }
+            chrom.insert(xi);
+        }
+    }
+    
     void get_2_string_match(char* query_comp,set<GA_node2>::iterator& itr)
     {
         int j=1;
+        for(int i=1;i<=itr->lenx;i++)
+            printf("%d ",itr->query[i]);
+        printf("\n");
+        for(int i=1;i<=itr->leny;i++)
+            printf("%d ",itr->comp[i]);
+        printf("\n");
+        for(int i=1;i<=itr->final_len;i++)
+            printf("%d ",itr->vis[i]);
+        printf("\n");
+        printf("%d\n",itr->final_len);
+        printf("%d %d\n",itr->lenx,itr->leny);
         for(int i=1;i<=itr->final_len;i++)
             if(itr->vis[i]==1)
                 printf("-");
@@ -173,8 +259,29 @@ private:
         chx=xi.query[idx];
         idy=1+rand()%xi.leny;
         chy=xi.comp[idy];
+        xi.vis[chx]=2;
+        xi.vis[chy]=1;
         xi.query[idx]=chy;
         xi.comp[idy]=chx;
+        int ix,iy;
+        xi.fitness=0; ix=1; iy=1;
+        for(int k=1;k<=xi.final_len;k++)
+            if(xi.vis[k]==1)
+            {
+                xi.fitness+=GAP;
+                iy++;
+            }
+            else if(xi.vis[k]==2)
+            {
+                xi.fitness+=GAP;
+                ix++;
+            }
+            else 
+            {
+                if(query_input[ix]!=query_comp[iy])
+                    xi.fitness+=MISMATCH;
+                ix++; iy++;
+            }
         child_chrom.push_back(xi);
     }
 
@@ -193,7 +300,7 @@ private:
             chx=xi.query[idx];
             do
             {
-                tox=rand()%xi.final_len;
+                tox=1+rand()%xi.final_len;
             }while(xi.vis[tox]==1||xi.vis[tox]==2);
             xi.vis[chx]=0;
             xi.vis[tox]=1;
@@ -205,12 +312,31 @@ private:
             chy=xi.comp[idy];
             do
             {
-                toy=rand()%xi.final_len;
+                toy=1+rand()%xi.final_len;
             }while(xi.vis[toy]==1||xi.vis[toy]==2);
             xi.vis[chy]=0;
-            xi.vis[toy]=1;
+            xi.vis[toy]=2;
             xi.comp[idy]=toy;
         }
+        int ix,iy;
+        xi.fitness=0; ix=1; iy=1;
+        for(int k=1;k<=xi.final_len;k++)
+            if(xi.vis[k]==1)
+            {
+                xi.fitness+=GAP;
+                iy++;
+            }
+            else if(xi.vis[k]==2)
+            {
+                xi.fitness+=GAP;
+                ix++;
+            }
+            else 
+            {
+                if(query_input[ix]!=query_comp[iy])
+                    xi.fitness+=MISMATCH;
+                ix++; iy++;
+            }
         child_chrom.push_back(xi);
     }
 
@@ -228,36 +354,68 @@ private:
         //cout<<chrom.size()<<endl;
     }
 
+    void select_good_space_exc()
+    {
+        int cou=0;
+        set<GA_node2>::iterator itr;
+        for(itr=chrom.begin();itr!=chrom.end();itr++)
+        {
+            cou++;
+            if(cou>CHROM_NUM)
+                break;
+        }
+        chrom.erase(itr,chrom.end());
+        //cout<<chrom.size()<<endl;
+    }
+
     GA_node2 GA_2_iteration()
     {
         build_chrom();
         //build_debug();
-        select_good();
+        //system("pause");
         return *chrom.begin();
     }
 
     GA_node2 GA_2_step()
     {
-        build_chrom();
-        //build_debug();
-        select_good();
-        set<GA_node2>::iterator itr;
-        for(int i=1;i<=LIM_GEN;i++)
-        {
-            child_chrom.clear();
-            //cout<<"COUNT: "<<chrom.size()<<endl;
-            for(itr=chrom.begin();itr!=chrom.end();itr++)
+        GA_node2 re,xi;
+        int ans=inf;
+        int delta=LIM_SPACE_MAX-LIM_SPACE_MIN+1;
+        for(int ti=1;ti<=EPOCH;ti++)
+            for(int j=0;j<=delta;j++)
             {
-                get_2_mut_eql(itr);
-                get_2_mut_exc(itr);
+                build_space_exc_chrom(j);
+                set<GA_node2>::iterator itr;
+                for(int i=1;i<=LIM_GEN;i++)
+                {
+                    child_chrom.clear();
+                    //cout<<"COUNT: "<<chrom.size()<<endl;
+                    //build_debug();
+                    //getchar();
+                    //getchar();
+                    for(itr=chrom.begin();itr!=chrom.end();itr++)
+                    {
+                        get_2_mut_eql(itr);
+                        get_2_mut_exc(itr);
+                    }
+                    chrom.insert(child_chrom.begin(),child_chrom.end());
+                    select_good_space_exc();
+                }
+                xi=*chrom.begin();
+                if(xi.fitness<ans)
+                {
+                    ans=xi.fitness;
+                    re=xi;
+                }
+                /*GA_2_visual_step(re);
+                cout<<ans<<endl;
+                getchar();
+                getchar();*/
             }
-            chrom.insert(child_chrom.begin(),child_chrom.end());
-            select_good();
-        }
-        return *chrom.begin();
+        return re;
     }
 
-    void GA_2_visual_step(GA_node2& xi,int id)
+    void GA_2_visual_step(GA_node2& xi)
     {
         int j=1;
         for(int i=1;i<=xi.final_len;i++)
@@ -271,7 +429,7 @@ private:
             if(xi.vis[i]==2)
                 printf("-");
             else
-                printf("%c",MSA_data[id][j++]);
+                printf("%c",query_comp[j++]);
         printf("\n\n");
     }
 
@@ -310,6 +468,7 @@ public:
                     ans_output=re;
                 }
             }
+            
         //GA
         query_comp=MSA_data[ans_id];
         len_x=len_data[ans_id];
@@ -322,7 +481,7 @@ public:
         printf("Answer: %d\nComparsion ID: %d\n",ans,ans_id);
         ed=clock();
         printf("Time cost: %lfs\n",(double)(ed-st)/CLOCKS_PER_SEC);
-        GA_2_visual_step(ans_output,ans_id);
+        GA_2_visual_step(ans_output);
     }
 };
 
