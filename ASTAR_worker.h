@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <ctime>
 #include <queue>
 #include "Tool.h"
 using namespace std;
@@ -12,6 +13,7 @@ class ASTAR_worker
 {
     friend class MSA_worker;
 private:
+    int output_ans;
     int* len_data;
     int len_input;
     int data_size;
@@ -40,21 +42,21 @@ private:
 
     int get_dp_H(int lenx,int leny,int x,int y,int z)
     {
-        return 0;//dp_ix[x][y]+dp_iy[x][z]+dp_xy[y][z];
+        return dp_ix[x][y]+dp_iy[x][z]+dp_xy[y][z];
     }
 
     void dp_work(int dp_2[][MAX_LEN+5],char* query_i,int len_i,char* query_comp,int len)
     {
         dp_2[len_i][len]=0;
         for(int i=len;i>=1;i--)
-            dp_2[0][i-1]=dp_2[0][i]+GAP;
+            dp_2[len_i][i-1]=dp_2[len_i][i]+GAP;
         for(int i=len_i;i>=1;i--)
-            dp_2[i-1][0]=dp_2[i][0]+GAP;
+            dp_2[i-1][len]=dp_2[i][len]+GAP;
         for(int i=len_i-1;i>=0;i--)
             for(int j=len-1;j>=0;j--)
             {
                 dp_2[i][j]=min(dp_2[i+1][j],dp_2[i][j+1])+GAP;
-                if(query_i[i]==query_comp[j])
+                if(query_i[i+1]==query_comp[j+1])
                     dp_2[i][j]=min(dp_2[i+1][j+1],dp_2[i][j]);
                 else
                     dp_2[i][j]=min(dp_2[i+1][j+1]+MISMATCH,dp_2[i][j]);
@@ -138,6 +140,8 @@ private:
         while(!q.empty())
         {
             xi=q.top(); q.pop();
+            if(xi.g+xi.h>=output_ans)
+                return inf;
             if(vis_2[xi.x][xi.y]==id) continue;
             vis_2[xi.x][xi.y]=id;
             if(xi.x==len_input&&xi.y==len)
@@ -189,6 +193,8 @@ private:
         {
             xi=q.top(); q.pop();
             //printf("%d %d %d %d\n",xi.x,xi.y,xi.z,vis_3[xi.x][xi.y][xi.z]);
+            if(xi.g+xi.h>=output_ans)
+                return inf;
             if(vis_3[xi.x][xi.y][xi.z]==id) continue;
             vis_3[xi.x][xi.y][xi.z]=id;
             if(xi.x==len_input&&xi.y==lenx&&xi.z==leny)
@@ -446,40 +452,50 @@ public:
     {
         memset(vis_2,0,sizeof(vis_2));
         query_input=input;
-        int ans=inf,re;
+        output_ans=inf;
+        int re;
         int ans_id=1;
         len_input=strlen(query_input+1);
+        clock_t st,ed;
+        st=clock();
         for(int i=1;i<=data_size;i++)
         {
             re=Astar_2_step(MSA_data[i],i);
-            if(re<ans)
+            if(re<output_ans)
             {
                 ans_id=i;
-                ans=re;
+                output_ans=re;
             }
         }
-        printf("Answer: %d\nComparsion ID: %d\n",ans,ans_id);
+        printf("Answer: %d\nComparsion ID: %d\n",output_ans,ans_id);
+        ed=clock();
+        printf("Time cost: %lfs\n",(double)(ed-st)/CLOCKS_PER_SEC);
         Astar_2_visual_step(MSA_data[ans_id],ans_id);
     }
 
     void ASTAR_3(char* input,int ID)
     {
         query_input=input;
-        int ans=inf,re;
+        output_ans=inf;
+        int re;
         int ans_idx=1,ans_idy=2;
         len_input=strlen(query_input+1);
+        clock_t st,ed;
+        st=clock();
         for(int i=1;i<=data_size;i++)
             for(int j=i+1;j<=data_size;j++)
             {
-                printf("%d %d\n",i,j);
+                //printf("%d %d\n",i,j);
                 re=Astar_3_step(MSA_data[i],i,MSA_data[j],j,ID);
-                if(re<ans)
+                if(re<output_ans)
                 {
-                    ans=re;
+                    output_ans=re;
                     ans_idx=i; ans_idy=j;
                 }
             }
-        printf("Answer: %d\nComparsion ID: %d %d\n",ans,ans_idx,ans_idy);
+        printf("Answer: %d\nComparsion ID: %d %d\n",output_ans,ans_idx,ans_idy);
+        ed=clock();
+        printf("Time cost: %lfs\n",(double)(ed-st)/CLOCKS_PER_SEC);
         Astar_3_visual_step(MSA_data[ans_idx],ans_idx,MSA_data[ans_idy],ans_idy);
     }
 };
