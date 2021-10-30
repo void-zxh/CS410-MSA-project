@@ -8,7 +8,7 @@
 #include <ctime>
 #include "DP_worker.h"
 #include "ASTAR_worker.h"
-#include "GA_worker.h"
+#include "IDGA_worker.h"
 using namespace std;
 
 class MSA_worker
@@ -23,7 +23,7 @@ private:
     int work_state;
     DP_worker dp;
     ASTAR_worker A_Star;
-    GA_worker ga;
+    IDGA_worker ga;
 
     void dimension_2(FILE* fp)
     {
@@ -43,8 +43,8 @@ private:
                     A_Star.ASTAR_2(query_input);break;
                 case 2:
                     srand(time(NULL));
-                    printf("GA algortihm: \n"); 
-                    ga.GA_2(query_input);
+                    printf("ID_GA algortihm: \n"); 
+                    ga.IDGA_2(query_input);
                 default:break;
             }
         }
@@ -67,8 +67,9 @@ private:
                     printf("A_Star searching: \n"); 
                     A_Star.ASTAR_3(query_input,ID);break;
                 case 2:
+                    srand(time(NULL));
                     printf("GA algorithm: \n"); 
-                    
+                    ga.IDGA_3(query_input);
                 default:break;
             }
         }
