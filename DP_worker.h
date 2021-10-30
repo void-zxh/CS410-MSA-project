@@ -433,6 +433,8 @@ public:
         int ans=inf,re;
         int ans_id=1;
         len_input=strlen(query_input+1);
+        clock_t st,ed;
+        st=clock();
         for(int i=1;i<=data_size;i++)
         {
             re=dp_2_step(MSA_data[i],i);
@@ -443,6 +445,8 @@ public:
             }
         }
         printf("Answer: %d\nComparsion ID: %d\n",ans,ans_id);
+        ed=clock();
+        printf("Time cost: %lfs\n",(double)(ed-st)/CLOCKS_PER_SEC);
         dp_2_visual_step(MSA_data[ans_id],ans_id);
     }
 
@@ -453,6 +457,8 @@ public:
         int ans_idx=1,ans_idy=2;
         len_input=strlen(query_input+1);
         //printf("%d\n",data_size);
+        clock_t st,ed;
+        st=clock();
         for(int i=1;i<=data_size;i++)
             for(int j=i+1;j<=data_size;j++)
             {
@@ -465,6 +471,8 @@ public:
                 }
             }
         printf("Answer: %d\nComparsion ID: %d %d\n",ans,ans_idx,ans_idy);
+        ed=clock();
+        printf("Time cost: %lfs\n",(double)(ed-st)/CLOCKS_PER_SEC);
         dp_3_visual_step(MSA_data[ans_idx],ans_idx,MSA_data[ans_idy],ans_idy);
     }
 };
